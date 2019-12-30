@@ -24,25 +24,12 @@ def file_get_contents(filename):
     fp.close()
     return content
 
-def selenium():
+def seleniumValidate(driver, site_url):
     print('starting selenium')
-    mobile_emulation = {"deviceName": "Nexus 5"}
-    # chrome_options = webdriver.ChromeOptions()
-    # chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
-    execPath = './gecodriver/geckodriver.exe'
-    driver = webdriver.Firefox(executable_path=execPath)
-    driver.set_window_size(360, 640)
-    # driver.get("http://www.toshav-hozer.co.il")
-    driver.get("http://www.agmon-law.co.il")
+    driver.get(site_url)
     resp = driver.execute_script("return document.getElementsByTagName('body')[0].scrollWidth > window.innerWidth")
     print(resp)
-    # assert "Python" in driver.title
-    # elem = driver.find_element_by_name("q")
-    # elem.clear()
-    # elem.send_keys("pycon")
-    # elem.send_keys(Keys.RETURN)
-    # assert "No results found." not in driver.page_source
-    driver.close()
+    return resp
 
 def check_regex():
     reg = r"\name\"viewport\""
@@ -63,33 +50,37 @@ def make_search(query, num_pages, start_from = None):
     results = engine.search(query, num_pages)
     links = results.links()
 
+    """ setup driver """
+    execPath = './gecodriver/geckodriver.exe'
+    driver = webdriver.Firefox(executable_path=execPath)
+    driver.set_window_size(360, 640)
+    """ end setup """
+
     for link in links:
         found_meta = False
         try:
             print("checking site: ", link)
-            result = requests.get(link)
-            if result.status_code not in [200, 301]:
-                continue
-
+            # result = requests.get(link)
+            # if result.status_code not in [200, 301]:
+            #     continue
             # found_meta = re.match(reg, result.text, re.MULTILINE | re.IGNORECASE)
-            if 'name="viewport"' not in result.text:
+            if seleniumValidate(driver, link):
+                # if 'name="viewport"' not in result.text:
                 starLinks.append(link)
                 found_meta = True
                 print(found_meta)
         except Exception as e:
             print(e)
-
+    driver.close()
 
     print("Saving to file | Meta Not Found In: ", starLinks)
     with codecs.open('./reports/{}.txt'.format(query), 'wb', 'utf8') as f:
         for item in starLinks:
             f.write("%s\n" % item)
 
+
 if __name__ == '__main__':
-    selenium()
     # check_regex()
-    # print(quit)
-    quit
     ap = argparse.ArgumentParser()
     ap.add_argument('-q', help='query', required=True)
     ap.add_argument('-e', help='search engine(s) - ' + ', '.join(engines_dict), default='google')
@@ -101,7 +92,8 @@ if __name__ == '__main__':
     ap.add_argument('-proxy', help='use proxy (protocol://ip:port)', default=config.proxy)
     ap.add_argument('-tor', help='use tor proxy', action='store_true')
     args = ap.parse_args()
-    make_search(args.q, args.p, args.sp)
+    if ap.args.q:
+        make_search(args.q, args.p, args.sp)
 
     # proxy = args.proxy or (config.tor if args.tor else None)
     # timeout = config.timeout + (10 * int(args.tor))
