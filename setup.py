@@ -6,9 +6,9 @@ with open('requirements.txt') as f:
 
 setup(
     name='search_engines',
-    version='0.4',
+    version='1.0',
     description='Search Engines Scraper',
-    author='Tasos M. Adamopoulos',
+    author='DS',
     license='MIT',
     packages=find_packages(),
     install_requires=requirements
